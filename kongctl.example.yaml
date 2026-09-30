@@ -1,0 +1,112 @@
+# kongctl.yaml: place at the repository root (or point --config / the CMP
+# CONFIG_FILE parameter at it). Every key is optional; the values shown are
+# the defaults unless marked "example". Flags and KONGCTL_* environment
+# variables override the file.
+
+# Environments to process when a command is given none. Empty = discover
+# every directory that matches layout.sourceDir.
+envs: []            # example: [dev, sit, stg, prod]
+
+layout:
+  # Where an environment's decK files live. {env} is replaced by the name.
+  sourceDir: environments/{env}/config/kong
+  # Files matched inside sourceDir (not recursive), merged in name order.
+  globs: ["*.yml", "*.yaml"]
+  # Optional shared files merged BEFORE the environment's own.
+  commonDir: ""      # example: environments/_common/config/kong
+  # Optional decK patch files applied AFTER the merge, in name order.
+  patchesDir: ""     # example: environments/{env}/config/kong.patches
+  # Guard against path traversal in environment names.
+  envNameRegex: "^[a-z0-9-]+$"
+  # Staged changes to these paths make the pre-commit hook check every env.
+  recheckPaths: [kongctl.yaml, lint/ruleset.yaml]
+
+placeholders:
+  # embedded: ${NAME} anywhere in a string. whole: the entire scalar only.
+  mode: embedded
+  open: "${"
+  close: "}"
+  nameRegex: "^[A-Z][A-Z0-9_]*$"
+  # Value used for unset names by `check` and --fake-secrets: <prefix><NAME>.
+  fakePrefix: fake-
+
+validate:
+  skip: false
+  # Enables version-specific checks; empty matches deck's default.
+  kongVersion: ""
+
+lint:
+  skip: false
+  ruleset: lint/ruleset.yaml     # missing file = lint skipped with a log line
+  failSeverity: error            # hint | info | warn | error
+  allowFailure: false            # true: findings warn instead of failing
+
+manifest:
+  # Secret | ConfigMap | ExternalSecret
+  kind: Secret
+  name: kong-declarative-config  # must match the chart's dblessConfig reference
+  key: kong.yml                  # the file the Kong chart mounts
+  labels:
+    app.kubernetes.io/name: kong
+    app.kubernetes.io/component: declarative-config
+    app.kubernetes.io/managed-by: kongctl
+  # {env} expands in label and annotation values.
+  annotations: {}                # example: {example.com/environment: "{env}"}
+
+# Used when manifest.kind is ExternalSecret. storeKind and storeName have no
+# default: they name your organisation's secret store.
+externalSecret:
+  apiVersion: external-secrets.io/v1
+  # Optional file in the bash tooling's secret-store.yaml shape, overlaid
+  # onto this section when it exists (secretStoreRef, refreshInterval,
+  # keyPrefix, keys).
+  storeFile: secret-store.yaml
+  storeKind: ""                  # example: ClusterSecretStore
+  storeName: ""                  # example: my-store
+  refreshInterval: 1h0m0s
+  targetName: ""                 # defaults to manifest.name
+  creationPolicy: Owner
+  engineVersion: v2
+  # Store key for a placeholder; {name} is the placeholder name.
+  remoteKey: "{name}"            # example: "DECK_{name}"
+  # Per-name exceptions to remoteKey (key, property, version).
+  remoteKeyOverrides: {}         # example: {MY_TOKEN: {key: MY_TOKEN}}
+  conversionStrategy: Default
+  decodingStrategy: None
+  metadataPolicy: None
+  # Template expressions; {name} expands. `quote` keeps the rendered YAML valid.
+  expression: "{{ .{name} | quote }}"
+  embeddedExpression: "{{ .{name} }}"
+
+diff:
+  baseRef: origin/main
+  mergeBase: true                # compare against merge-base(base, HEAD)
+
+note:
+  marker: "<!-- kong-config-diff -->"
+  maxLines: 400
+  provider: gitlab
+
+gitlab:                          # usually from CI_API_V4_URL etc.
+  baseUrl: ""
+  projectId: ""
+  mrIid: ""
+  token: ""
+
+cmp:
+  prefix: ARGOCD_ENV_
+  params:
+    env: ENV_NAME
+    basepath: BASEPATH
+    name: SECRET_NAME
+    key: SECRET_KEY
+    kind: KIND
+    skipValidate: SKIP_VALIDATE
+    skipLint: SKIP_LINT
+    allowLintFailure: ALLOW_LINT_FAILURE
+    configFile: CONFIG_FILE
+  # Bare container variable that enables fake secrets; never prefixed.
+  fakeSecretsEnv: FAKE_SECRETS
+
+log:
+  level: info

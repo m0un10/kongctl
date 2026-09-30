@@ -1,0 +1,3 @@
+# A config with no store settings, so ExternalSecret mode must be refused.
+externalSecret:
+  storeFile: ""

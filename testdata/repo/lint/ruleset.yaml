@@ -1,0 +1,11 @@
+# Minimal decK lint ruleset: every service must use https.
+rules:
+  service-must-be-https:
+    description: services must talk https to upstreams
+    given: $.services[*]
+    severity: error
+    then:
+      field: protocol
+      function: pattern
+      functionOptions:
+        match: "^https$"

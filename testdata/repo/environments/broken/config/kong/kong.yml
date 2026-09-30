@@ -1,0 +1,10 @@
+_format_version: "3.0"
+services:
+- host: upstream.example.internal
+  name: dup-service
+  port: 443
+  protocol: https
+- host: upstream.example.internal
+  name: dup-service
+  port: 443
+  protocol: https

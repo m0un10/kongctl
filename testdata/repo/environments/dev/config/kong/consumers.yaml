@@ -1,0 +1,14 @@
+_format_version: "3.0"
+consumers:
+- basicauth_credentials:
+  - password: ${CONSUMER_ALPHA_BASICAUTH_PASSWORD}
+    username: alpha-user
+  custom_id: alpha
+  keyauth_credentials:
+  - key: ${CONSUMER_ALPHA_KEYAUTH_KEY}
+  username: alpha
+- id: 5091f2d2-dd85-42d6-86c3-503df1751a2d
+  keyauth_credentials:
+  - id: 34e065f7-da2c-4817-8c20-21696d7bac47
+    key: ${CONSUMER_BETA_KEYAUTH_KEY}
+  username: beta

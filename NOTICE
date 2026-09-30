@@ -1,0 +1,11 @@
+kongctl
+
+This product includes code derived from Kong's decK and go-apiops projects:
+
+  - internal/compose: the merge algorithm is a port of
+    github.com/kong/go-apiops/merge (Copyright Kong Inc., Apache License 2.0)
+  - internal/lint: a port of github.com/kong/deck/lint
+    (Copyright Kong Inc., Apache License 2.0)
+
+The Apache License 2.0 text is available at
+https://www.apache.org/licenses/LICENSE-2.0

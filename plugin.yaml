@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ConfigManagementPlugin
+metadata:
+  # Addressed in an Application as "<metadata.name>-<spec.version>" = kong-deck-v2.
+  # The name is kept from the bash-based plugin so existing Applications need
+  # no change; override at image build time if you prefer another.
+  name: kong-deck
+spec:
+  version: v2
+  init:
+    command: [/kongctl, cmp, init]
+  generate:
+    command: [/kongctl, cmp, generate]
+  # NO discover BLOCK, deliberately. Every Application names the plugin
+  # explicitly, so discovery adds nothing but a misleading failure mode: a repo
+  # that does not match reports "could not find cmp-server plugin ... supporting
+  # the given repository", which reads like a registration problem.
+  parameters:
+    static:
+      - name: ENV_NAME
+        title: Environment
+        tooltip: "Selects layout.sourceDir with {env} expanded (default environments/<env>/config/kong)"
+        required: true
+      - name: BASEPATH
+        title: Repository basepath
+        tooltip: "Subdirectory holding the repo root; leave empty for the repo root"
+        required: false
+      - name: KIND
+        title: Manifest kind
+        tooltip: "Secret, ConfigMap or ExternalSecret (default from kongctl.yaml, else Secret)"
+        required: false
+      - name: SECRET_NAME
+        title: Object name
+        tooltip: "Name of the emitted object; must match the chart's dblessConfig reference"
+        required: false
+      - name: SECRET_KEY
+        title: Data key
+        tooltip: "Defaults to kong.yml, which is what the Kong chart mounts"
+        required: false
+      - name: CONFIG_FILE
+        title: Config file
+        tooltip: "Repo-relative kongctl.yaml (default: kongctl.yaml at the repo root when present)"
+        required: false
+      - name: SKIP_VALIDATE
+        title: Skip validate
+        tooltip: "true to skip schema validation"
+        required: false
+      - name: SKIP_LINT
+        title: Skip lint
+        tooltip: "true to skip the lint ruleset"
+        required: false
+      - name: ALLOW_LINT_FAILURE
+        title: Allow lint failure
+        tooltip: "true to warn instead of failing the sync on lint findings"
+        required: false
+  preserveFileMode: false

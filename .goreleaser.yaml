@@ -1,0 +1,39 @@
+version: 2
+
+project_name: kongctl
+
+builds:
+  - id: kongctl
+    main: ./cmd/kongctl
+    binary: kongctl
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w
+      - -X github.com/m0un10/kongctl/internal/cli.Version={{.Version}}
+      - -X github.com/m0un10/kongctl/internal/cli.Commit={{.ShortCommit}}
+      - -X github.com/m0un10/kongctl/internal/cli.Date={{.Date}}
+
+archives:
+  - formats: [tar.gz]
+    files: [plugin.yaml, README.md]
+
+checksum:
+  name_template: checksums.txt
+
+dockers:
+  - image_templates:
+      - ghcr.io/m0un10/kongctl:{{ .Version }}
+      - ghcr.io/m0un10/kongctl:{{ .Major }}.{{ .Minor }}
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - --platform=linux/amd64
+      - --build-arg=VERSION={{ .Version }}
+      - --build-arg=COMMIT={{ .ShortCommit }}
+    extra_files: [plugin.yaml, go.mod, go.sum, cmd, internal]
+
+changelog:
+  use: git

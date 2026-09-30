@@ -1,0 +1,21 @@
+_format_version: "3.0"
+consumers:
+- keyauth_credentials:
+  - key: ${CONSUMER_ALPHA_KEYAUTH_KEY}
+  username: alpha
+plugins:
+- config:
+    endpoint: https://telemetry.example.internal
+    token: ${MY_TOKEN}
+  enabled: true
+  name: telemetry-exporter
+services:
+- host: upstream.prod.example.internal
+  name: orders-service
+  port: 443
+  protocol: https
+  routes:
+  - name: orders-route
+    paths:
+    - /orders
+    strip_path: false

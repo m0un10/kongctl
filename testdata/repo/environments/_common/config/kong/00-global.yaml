@@ -1,0 +1,10 @@
+_format_version: "3.0"
+plugins:
+- config:
+    per_consumer: true
+    status_code_metrics: true
+  enabled: true
+  name: prometheus
+  protocols:
+  - http
+  - https

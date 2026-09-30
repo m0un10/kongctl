@@ -1,0 +1,7 @@
+_format_version: "3.0"
+patches:
+- selectors:
+  - $.services[?(@.name=='orders-service')]
+  values:
+    port: 8443
+    retries: 3

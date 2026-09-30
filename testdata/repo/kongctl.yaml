@@ -1,0 +1,14 @@
+# Fixture configuration for the test suite. Everything else is a default.
+layout:
+  commonDir: environments/_common/config/kong
+  patchesDir: environments/{env}/config/kong.patches
+manifest:
+  annotations:
+    example.com/environment: "{env}"
+externalSecret:
+  storeKind: ClusterSecretStore
+  storeName: example-store
+  remoteKey: "SECRET_{name}"
+  remoteKeyOverrides:
+    MY_TOKEN:
+      key: MY_TOKEN
