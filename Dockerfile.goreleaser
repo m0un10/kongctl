@@ -3,22 +3,23 @@
 # plus the binary, plugin.yaml where the Argo CD repo-server expects it, the
 # CA bundle, and a passwd entry for uid 999. Nothing is compiled here.
 #
-# The prep stage only produces platform-neutral files (passwd, group, CA
-# bundle, directories), so it runs on the BUILD platform: under QEMU the
-# arm64 apk/adduser step failed, and there is no reason to emulate it.
+# The prep stage only produces platform-neutral files, so it runs on the
+# BUILD platform rather than under QEMU. The passwd and group entries are
+# written directly: Alpine already has a group with gid 999 (ping), so
+# addgroup -g 999 fails, and the Argo CD convention is uid and gid 999.
 FROM --platform=$BUILDPLATFORM alpine:3.21 AS prep
 RUN apk add --no-cache ca-certificates \
- && addgroup -g 999 argocd \
- && adduser -u 999 -G argocd -h /home/argocd -D argocd \
- && mkdir -p /home/argocd/cmp-server/config /scratch-tmp \
- && chown -R 999:999 /home/argocd /scratch-tmp
+ && mkdir -p /out/etc /out/home/argocd/cmp-server/config /out/tmp \
+ && printf 'argocd:x:999:999:argocd:/home/argocd:/sbin/nologin\n' > /out/etc/passwd \
+ && printf 'argocd:x:999:\n' > /out/etc/group \
+ && chown -R 999:999 /out/home /out/tmp
 
 FROM scratch
 ARG TARGETPLATFORM
-COPY --from=prep /etc/passwd /etc/group /etc/
+COPY --from=prep /out/etc/passwd /out/etc/group /etc/
 COPY --from=prep /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=prep --chown=999:999 /home/argocd /home/argocd
-COPY --from=prep --chown=999:999 /scratch-tmp /tmp
+COPY --from=prep --chown=999:999 /out/home /home
+COPY --from=prep --chown=999:999 /out/tmp /tmp
 COPY $TARGETPLATFORM/kongctl /kongctl
 COPY --chown=999:999 plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
 ENV HOME=/home/argocd \
