@@ -18,6 +18,17 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      # The dependency tree (go-database-reconciler, vacuum) is large and
+      # GoReleaser compiles every GOOS/GOARCH separately, which exhausted the
+      # 14 GB a hosted runner leaves free. Drop the preinstalled toolchains
+      # we do not use (about 25 GB) and build two targets at a time.
+      - name: free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost \
+            "$AGENT_TOOLSDIRECTORY/Ruby" "$AGENT_TOOLSDIRECTORY/PyPy"
+          sudo docker image prune --all --force >/dev/null 2>&1 || true
+          df -h / | tail -1
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -35,6 +46,6 @@ jobs:
       - uses: goreleaser/goreleaser-action@v6
         with:
           version: "~> v2"
-          args: release --clean
+          args: release --clean --parallelism 2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
