@@ -2,7 +2,11 @@
 # in the context under <platform>/kongctl. Same layout as Dockerfile: scratch
 # plus the binary, plugin.yaml where the Argo CD repo-server expects it, the
 # CA bundle, and a passwd entry for uid 999. Nothing is compiled here.
-FROM alpine:3.21 AS prep
+#
+# The prep stage only produces platform-neutral files (passwd, group, CA
+# bundle, directories), so it runs on the BUILD platform: under QEMU the
+# arm64 apk/adduser step failed, and there is no reason to emulate it.
+FROM --platform=$BUILDPLATFORM alpine:3.21 AS prep
 RUN apk add --no-cache ca-certificates \
  && addgroup -g 999 argocd \
  && adduser -u 999 -G argocd -h /home/argocd -D argocd \
