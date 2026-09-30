@@ -9,13 +9,18 @@ LDFLAGS  = -s -w \
 IMAGE ?= kongctl:dev
 ENV   ?= dev
 
-.PHONY: build test vet lint tidy image cmp-test clean snapshot release
+.PHONY: build test test-coverage vet lint tidy image cmp-test clean snapshot release
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/kongctl ./cmd/kongctl
 
 test:
 	go test ./...
+
+# Coverage profile in the format the CI coverage report consumes.
+test-coverage:
+	go test -cover -coverprofile=coverage.txt ./... -count=1
+	go tool cover -func=coverage.txt | tail -1
 
 vet:
 	go vet ./...
@@ -40,7 +45,7 @@ cmp-test: image
 	  $(IMAGE) cmp generate
 
 clean:
-	rm -rf bin dist
+	rm -rf bin dist coverage.txt
 
 # Local, unpublished GoReleaser run to check the release build.
 snapshot:
