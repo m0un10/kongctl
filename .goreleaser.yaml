@@ -2,6 +2,10 @@ version: 2
 
 project_name: kongctl
 
+before:
+  hooks:
+    - go mod tidy
+
 builds:
   - id: kongctl
     main: ./cmd/kongctl
@@ -18,22 +22,71 @@ builds:
 
 archives:
   - formats: [tar.gz]
-    files: [plugin.yaml, README.md]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files: [plugin.yaml, README.md, kongctl.example.yaml, NOTICE]
 
 checksum:
   name_template: checksums.txt
 
-dockers:
-  - image_templates:
-      - ghcr.io/m0un10/kongctl:{{ .Version }}
-      - ghcr.io/m0un10/kongctl:{{ .Major }}.{{ .Minor }}
-    dockerfile: Dockerfile
-    use: buildx
-    build_flag_templates:
-      - --platform=linux/amd64
-      - --build-arg=VERSION={{ .Version }}
-      - --build-arg=COMMIT={{ .ShortCommit }}
-    extra_files: [plugin.yaml, go.mod, go.sum, cmd, internal]
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
-  use: git
+  use: github
+  sort: asc
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\(.+\))?!?:.+$'
+      order: 0
+    - title: Fixes
+      regexp: '^.*?fix(\(.+\))?!?:.+$'
+      order: 1
+    - title: Other
+      order: 999
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
+
+# The CMP image: prebuilt binaries on scratch, multi-arch, tagged with the
+# version, major.minor, major and latest. Built and pushed in the publish
+# phase; `make snapshot` skips it.
+dockers_v2:
+  - id: kongctl
+    dockerfile: Dockerfile.goreleaser
+    images:
+      - ghcr.io/m0un10/kongctl
+    tags:
+      - "{{ .Version }}"
+      - "{{ .Major }}.{{ .Minor }}"
+      - "{{ .Major }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.source: https://github.com/m0un10/kongctl
+      org.opencontainers.image.description: Compose, check and deliver Kong declarative config; Argo CD CMP
+    extra_files: [plugin.yaml]
+
+release:
+  github:
+    owner: m0un10
+    name: kongctl
+  draft: false
+  prerelease: auto
+  make_latest: true
+  name_template: "{{ .Tag }}"
+  footer: |
+    ## Install
+
+    Binaries for linux and darwin (amd64, arm64) are attached; verify with
+    `checksums.txt`. The Argo CD CMP image is
+    `ghcr.io/m0un10/kongctl:{{ .Version }}` (also `{{ .Major }}.{{ .Minor }}`,
+    `{{ .Major }}` and `latest`).

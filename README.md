@@ -186,3 +186,22 @@ make image       # docker build
 
 The merge algorithm and the lint wrapper are ports of Kong's go-apiops and
 decK code (Apache-2.0); see NOTICE.
+
+## Releasing
+
+Releases are cut from semver tags on `main`. Push a tag and the `release`
+workflow runs GoReleaser, which builds the binaries, publishes the GitHub
+Release (marked latest, with a changelog grouped by conventional-commit
+type) and pushes the CMP image to GHCR as `ghcr.io/m0un10/kongctl:<version>`,
+`<major>.<minor>`, `<major>` and `latest`.
+
+```bash
+make release VERSION=v1.2.3      # tags, pushes, and the workflow does the rest
+# or by hand
+git tag -a v1.2.3 -m "v1.2.3" && git push origin v1.2.3
+```
+
+Bump the major for a breaking change to the CLI, the config file or the CMP
+contract, the minor for new capability, the patch for fixes. A `-rc.N`
+suffix publishes a pre-release. `make snapshot` runs GoReleaser locally
+without publishing, to check the build.
