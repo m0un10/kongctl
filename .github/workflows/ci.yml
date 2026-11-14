@@ -20,7 +20,11 @@ jobs:
         with:
           go-version-file: go.mod
       - run: go vet ./...
-      - run: go test ./...
+      - run: go test -cover -coverprofile=coverage.txt ./... -count=1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "${{ github.event.repository.name }}"
+          path: coverage.txt
       - run: CGO_ENABLED=0 go build -trimpath -o bin/kongctl ./cmd/kongctl
       - run: ./bin/kongctl check --root testdata/repo -e dev,prod
       - name: goreleaser config check
@@ -28,3 +32,22 @@ jobs:
         with:
           version: "~> v2"
           args: check
+
+  # Compares the PR's coverage against the base branch's coverage artifact
+  # and comments the delta on the PR. The base artifact comes from the push
+  # run on main, so the first PR after this lands has no baseline yet.
+  code_coverage:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+      actions: read        # download the coverage artifact from the test job
+      pull-requests: write # comment on the PR
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fgrosse/go-coverage-report@v1.1.1
+        continue-on-error: true # no baseline until main has run once
+        with:
+          coverage-artifact-name: "${{ github.event.repository.name }}"
+          coverage-file-name: "coverage.txt"

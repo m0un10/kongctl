@@ -4,3 +4,5 @@
 *.out
 *.secrets.env
 .DS_Store
+coverage.txt
+coverage.html

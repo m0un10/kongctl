@@ -179,7 +179,8 @@ Semantics are the same; a few byte-level details differ:
 ## Development
 
 ```bash
-make test        # unit tests, plus one integration test that needs git
+make test           # unit tests, plus one integration test that needs git
+make test-coverage  # same, writing coverage.txt and printing the total
 make vet
 make image       # docker build
 ```
